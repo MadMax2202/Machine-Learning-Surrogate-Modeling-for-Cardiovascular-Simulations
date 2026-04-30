@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# MATLAB autosave/cache
+*.asv
+*.m~
+*.slxc
+slprj/
+*.mex*
+
+# Data / generated simulations
+01_Data/
+
+01_Data/generated_samples/
+01_Data/simulation_results/
+01_Data/Output_data/
+01_Data/Input_data/
+*.mat
+*.csv
+
+01_Data/*.xlsx
+
+# Logs / temporary files
+*.log
+*.tmp
+
+# Secrets/config
+.env
+config/tokens.json
