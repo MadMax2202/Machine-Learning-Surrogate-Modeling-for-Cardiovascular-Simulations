@@ -30,3 +30,6 @@ slprj/
 # Secrets/config
 .env
 config/tokens.json
+
+
+personal_access_token.txt
