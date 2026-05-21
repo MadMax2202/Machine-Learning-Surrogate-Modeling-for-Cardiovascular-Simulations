@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=ped_dcm_cond_10k
-#SBATCH --array=1-200%50
+#SBATCH --job-name=ped_dcm_cond_test
+#SBATCH --array=1-2
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=24G
-#SBATCH --time=08:00:00
-#SBATCH --output=../01_Data/Conditional_Sampling/simulation_results/conditional_sampling_100_patients_100_variations_v1/logs/slurm_%A_%a.out
-#SBATCH --error=../01_Data/Conditional_Sampling/simulation_results/conditional_sampling_100_patients_100_variations_v1/logs/slurm_%A_%a.err
+#SBATCH --time=00:45:00
+#SBATCH --output=../01_Data/Conditional_Sampling/simulation_results/conditional_sampling_100_patients_100_variations_v1/logs/test_slurm_%A_%a.out
+#SBATCH --error=../01_Data/Conditional_Sampling/simulation_results/conditional_sampling_100_patients_100_variations_v1/logs/test_slurm_%A_%a.err
 
 set -euo pipefail
 
@@ -56,7 +56,7 @@ if [ ! -f "$SAMPLES_PATH" ]; then
 fi
 
 echo "=================================================="
-echo "CONDITIONAL SAMPLING 10K CLUSTER RUN"
+echo "CONDITIONAL SAMPLING TEST RUN"
 echo "SLURM_JOB_ID: $SLURM_JOB_ID"
 echo "SLURM_ARRAY_JOB_ID: ${SLURM_ARRAY_JOB_ID:-none}"
 echo "SLURM_ARRAY_TASK_ID: $SLURM_ARRAY_TASK_ID"
@@ -73,6 +73,6 @@ cd "$ROOT/04_Matlab_&_Simulink"
 matlab -singleCompThread -batch "run_10k_conditional_sampling_pediatric_noVAD_linear('$SAMPLES_PATH', '$RESULTS_PATH');"
 
 echo "=================================================="
-echo "Finished conditional sampling task $SLURM_ARRAY_TASK_ID"
+echo "Finished conditional sampling TEST task $SLURM_ARRAY_TASK_ID"
 echo "End time: $(date)"
 echo "=================================================="
