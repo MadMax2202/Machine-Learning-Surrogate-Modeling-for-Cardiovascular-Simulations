@@ -1,0 +1,16 @@
+Round 1: 
+abs(LVSV-RVSV)<1ml
+LAP<mPAP
+SAP>CVP
+abs(SAP-DAP)>30mmHg
+abs(sPAP-dPAPA)>15mmHg
+EDVRV>ESVRV
+EDVLV>ESVLV
+
+Round 2: 
+LASV and RASV same order of magnitude 
+abs(LASV-RASV)<1ml
+ASV<VSV/3 
+CVP=RAP
+ESPRV>EDPRV
+ESPLV>EDPLV 

@@ -4,7 +4,7 @@ mdl = 'MyComplexModel_V12R2023a';
 %load_system('MyComplexModel_V12R2023a.slx');
 % run('VT_Parameter_ComplexModel_compr_Pediatric_DCM_LVAD.m');
 % b) Patients
-n_simulations = 500; % number of patients
+n_simulations = 1000; % number of patients
 rpm_values = 0;
 n_rpm = numel(rpm_values);
 % later: age, atm preset for 5yo
