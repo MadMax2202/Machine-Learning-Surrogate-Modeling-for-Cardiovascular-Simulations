@@ -10,6 +10,8 @@
 
 set -euo pipefail
 
+# This assumes you submit from:
+# MAIN_PROJECT/08_Conditional_Sampling_v2
 cd "$SLURM_SUBMIT_DIR"
 
 module purge
@@ -18,7 +20,12 @@ module load Matlab/R2024b
 
 ROOT="$(cd .. && pwd)"
 
-source "$ROOT/venv/bin/activate"
+if [ -f "$ROOT/venv/bin/activate" ]; then
+    source "$ROOT/venv/bin/activate"
+else
+    echo "WARNING: venv not found at $ROOT/venv/bin/activate"
+    echo "Continuing without activating venv."
+fi
 
 CAMPAIGN_NAME="conditional_sampling_100_patients_100_variations_v2"
 
@@ -66,11 +73,13 @@ echo "ROOT: $ROOT"
 echo "Manifest: $MANIFEST"
 echo "Samples: $SAMPLES_PATH"
 echo "Results: $RESULTS_PATH"
+echo "MATLAB folder: $ROOT/04_Matlab_&_Simulink/conditional_sampling_v2"
 echo "=================================================="
 
 cd "$ROOT/04_Matlab_&_Simulink/conditional_sampling_v2"
 
-matlab -singleCompThread -batch "run_chunk_conditional_sampling_from_paths('$SAMPLES_PATH', '$RESULTS_PATH');"
+# The manifest-based MATLAB function reads SLURM_ARRAY_TASK_ID itself.
+matlab -singleCompThread -batch "run_chunk_conditional_sampling_from_manifest;"
 
 echo "=================================================="
 echo "Finished conditional sampling V2 task $SLURM_ARRAY_TASK_ID"
