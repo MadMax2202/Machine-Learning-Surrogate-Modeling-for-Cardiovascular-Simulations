@@ -195,7 +195,6 @@ if ~isnan(n_cases_from_manifest) && height(samples) ~= n_cases_from_manifest
         n_cases_from_manifest, height(samples));
 end
 
-% Validate simulation_id robustly
 sample_var_names = string(samples.Properties.VariableNames);
 
 if ~ismember("simulation_id", sample_var_names)
@@ -205,19 +204,38 @@ if ~ismember("simulation_id", sample_var_names)
 end
 
 %% ------------------------------------------------------------
-% 5. Load Simulink model
+% 5. Add MATLAB paths and load Simulink model
 %% ------------------------------------------------------------
 
 model = "MyComplexModel_V13R2023a";
 
-fprintf("Loading Simulink model: %s\n", model);
+model_dir = fullfile(ROOT, "04_Matlab_&_Simulink");
+model_file = fullfile(model_dir, model + ".slx");
+
+fprintf("Adding MATLAB paths:\n");
+fprintf("  %s\n", model_dir);
+fprintf("  %s\n", matlab_dir);
+
+addpath(model_dir);
+addpath(matlab_dir);
+
+fprintf("Looking for model file:\n%s\n", model_file);
+
+if ~isfile(model_file)
+    error("Model file not found: %s", model_file);
+end
+
+fprintf("Loading Simulink model from file:\n%s\n", model_file);
 
 try
-    load_system(model);
+    load_system(model_file);
 catch ME
-    fprintf("Failed to load model: %s\n", model);
+    fprintf("Failed to load model file: %s\n", model_file);
+    fprintf("%s\n", getReport(ME, "extended", "hyperlinks", "off"));
     rethrow(ME);
 end
+
+fprintf("Model loaded successfully: %s\n", model);
 
 %% ------------------------------------------------------------
 % 6. Run rows
@@ -233,7 +251,6 @@ for i = 1:height(samples)
 
     simulation_id = samples.simulation_id(i);
 
-    % Convert if MATLAB reads it strangely
     if iscell(simulation_id)
         simulation_id = simulation_id{1};
     end
@@ -254,7 +271,6 @@ for i = 1:height(samples)
     try
         result_row = run_one_case_from_config(sample_row, model);
     catch ME
-        % Safety net. Ideally run_one_case_from_config already catches sim errors.
         fprintf("Unexpected error outside run_one_case_from_config for simulation_id=%d\n", ...
             simulation_id_num);
 
@@ -284,7 +300,6 @@ for i = 1:height(samples)
     fprintf("Finished simulation_id=%d in %.2f seconds.\n", ...
         simulation_id_num, elapsed_row);
 
-    % Save partial progress every 5 simulations and at the end.
     if mod(i, 5) == 0 || i == height(samples)
         writetable(all_results, results_path);
         fprintf("Partial results saved to:\n%s\n", results_path);
