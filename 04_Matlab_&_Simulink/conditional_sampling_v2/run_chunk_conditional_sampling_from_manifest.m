@@ -83,64 +83,85 @@ if ~isfile(manifest_path)
 end
 
 %% ------------------------------------------------------------
-% 3. Read manifest robustly
+% 3. Read manifest robustly WITHOUT readtable
 %% ------------------------------------------------------------
 
-% Important:
-% MATLAB sometimes changes CSV header names.
-% So we do NOT rely on manifest.array_id, manifest.samples_path, etc.
-% We read by column position:
-%   column 1 = array_id
-%   column 2 = samples_path
-%   column 3 = results_path
+% Manifest expected format:
+% array_id,samples_path,results_path,n_cases
+%
+% We read this manually because MATLAB readtable() was changing/losing
+% the array_id variable name on the cluster.
 
-manifest = readtable(manifest_path, ...
-    "TextType", "string", ...
-    "VariableNamingRule", "preserve");
+fid = fopen(manifest_path, "r");
 
-fprintf("Manifest variable names detected by MATLAB:\n");
-disp(manifest.Properties.VariableNames);
-
-if width(manifest) < 3
-    error("Manifest must have at least 3 columns: array_id, samples_path, results_path.");
+if fid == -1
+    error("Could not open manifest file: %s", manifest_path);
 end
 
-manifest_array_ids = manifest{:, 1};
+header_line = fgetl(fid);
 
-% If MATLAB reads array_id as string/cell, convert it.
-if iscell(manifest_array_ids)
-    manifest_array_ids = str2double(string(manifest_array_ids));
-elseif isstring(manifest_array_ids)
-    manifest_array_ids = str2double(manifest_array_ids);
-elseif ischar(manifest_array_ids)
-    manifest_array_ids = str2double(string(manifest_array_ids));
+if ~ischar(header_line)
+    fclose(fid);
+    error("Manifest file is empty: %s", manifest_path);
 end
 
-idx = find(manifest_array_ids == array_id, 1);
+fprintf("Manifest header:\n%s\n", header_line);
 
-if isempty(idx)
-    fprintf("Available manifest array IDs:\n");
-    disp(manifest_array_ids(:)');
+samples_path = "";
+results_path = "";
+n_cases_from_manifest = NaN;
+found_manifest_row = false;
+
+while true
+
+    line = fgetl(fid);
+
+    if ~ischar(line)
+        break;
+    end
+
+    line = strtrim(line);
+
+    if strlength(string(line)) == 0
+        continue;
+    end
+
+    parts = split(string(line), ",");
+
+    if numel(parts) < 3
+        continue;
+    end
+
+    current_array_id = str2double(parts(1));
+
+    if current_array_id == array_id
+        samples_path = strtrim(parts(2));
+        results_path = strtrim(parts(3));
+
+        if numel(parts) >= 4
+            n_cases_from_manifest = str2double(parts(4));
+        end
+
+        found_manifest_row = true;
+        break;
+    end
+end
+
+fclose(fid);
+
+if ~found_manifest_row
     error("array_id=%d not found in manifest.", array_id);
 end
 
-samples_path = manifest{idx, 2};
-results_path = manifest{idx, 3};
-
-% Convert paths safely to char
-if iscell(samples_path)
-    samples_path = samples_path{1};
-end
-
-if iscell(results_path)
-    results_path = results_path{1};
-end
-
-samples_path = char(string(samples_path));
-results_path = char(string(results_path));
+samples_path = char(samples_path);
+results_path = char(results_path);
 
 fprintf("Samples chunk:\n%s\n", samples_path);
 fprintf("Results chunk:\n%s\n", results_path);
+
+if ~isnan(n_cases_from_manifest)
+    fprintf("Expected n_cases from manifest: %d\n", n_cases_from_manifest);
+end
 
 if ~isfile(samples_path)
     error("Samples chunk not found: %s", samples_path);
@@ -167,6 +188,11 @@ if height(samples) == 0
     warning("Samples chunk is empty. Writing empty result table.");
     writetable(samples, results_path);
     return;
+end
+
+if ~isnan(n_cases_from_manifest) && height(samples) ~= n_cases_from_manifest
+    warning("Chunk row count mismatch: manifest says %d, loaded %d.", ...
+        n_cases_from_manifest, height(samples));
 end
 
 % Validate simulation_id robustly
